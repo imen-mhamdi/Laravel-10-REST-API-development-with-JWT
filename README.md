@@ -1,5 +1,7 @@
 Link to JWT Auth documentation: https://laravel-jwt-auth.readthedocs....
-
+documentation:https://www.fundaofwebit.com/post/laravel-10-spatie-user-roles-and-permissions-tutorial
+documentation:https://spatie.be/docs/laravel-permission/v6/basic-usage/middleware
+documentation:https://codeanddeploy.com/blog/laravel/laravel-8-user-roles-and-permissions-step-by-step-tutorial
 
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
