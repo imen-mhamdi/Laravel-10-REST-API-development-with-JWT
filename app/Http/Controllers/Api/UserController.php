@@ -10,14 +10,28 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
+
+
+    public function __construct()
+{
+    $this->middleware('permission:employee-list|employee-create|employee-edit|employee-delete', ['only' => ['index']]);
+    $this->middleware('permission:employee-create', ['only' => ['create', 'store']]);
+    $this->middleware('permission:employee-edit', ['only' => ['edit', 'update']]);
+    $this->middleware('permission:employee-delete', ['only' => ['destroy']]);
+}
+
+
     public function index()
     {
         $users = User::latest()->paginate(10);
         return response()->json($users);
     }
+
+
 
     public function store(StoreUserRequest $request): JsonResponse
     {
@@ -25,23 +39,48 @@ class UserController extends Controller
         if (!$authenticatedUser) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized'
+                'message' => 'Non autorisé'
             ], 401);
         }
 
+        // Créer l'utilisateur
         $user = User::create([
-            'name' => $request->get('name'),
-            'email' => $request->get('email'),
-            'company_id' => Auth::user()->company_id,
-            'password' => Hash::make($request->get('password'))
+            'name' => $request->input('name'),
+            'email' => $request->input('email'),
+            'password' => Hash::make($request->input('password'))
         ]);
+
+        // Vérifier si le rôle est spécifié dans la demande
+        if ($request->has('role')) {
+            // Trouver le rôle par son nom
+            $role = Role::where('name', $request->input('role'))->first();
+
+            if ($role) {
+                // Assigner le rôle à l'utilisateur créé
+                $user->assignRole($role);
+            } else {
+                // Retourner une réponse si le rôle spécifié n'existe pas
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Le rôle spécifié n\'existe pas.'
+                ], 404);
+            }
+        } else {
+            // Retourner une réponse si aucun rôle n'est spécifié
+            return response()->json([
+                'success' => false,
+                'message' => 'Le champ de rôle est requis.'
+            ], 422);
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'User created successfully.',
+            'message' => 'Utilisateur créé avec succès.',
             'user' => $user
         ], 201);
     }
+
+
 
     public function show($id)
     {
@@ -61,19 +100,18 @@ class UserController extends Controller
     //         'userRoles' => $userRoles
     //     ]);
     // }
-
     public function update(UpdateUserRequest $request, User $user)
     {
-        // Use the validated data from the request
+        // Utiliser les données validées à partir de la demande
         $validatedData = $request->validated();
 
-        // Update user with the validated data
+        // Mettre à jour l'utilisateur avec les données validées
         $user->update($validatedData);
 
-        // Return the updated user
+        // Retourner l'utilisateur mis à jour
         return response()->json([
             'success' => true,
-            'message' => 'User updated successfully.',
+            'message' => 'Utilisateur mis à jour avec succès.',
             'user' => $user
         ]);
     }
