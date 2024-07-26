@@ -19,3 +19,8 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+<Directory "C:/Users/user/Desktop/Gestion-entreprise/Backend_laravel_aut/public/uploads">
+    Options Indexes FollowSymLinks
+    AllowOverride All
+    Require all granted
+</Directory>

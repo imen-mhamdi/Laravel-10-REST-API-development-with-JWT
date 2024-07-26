@@ -3,19 +3,19 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
+use App\Models\Label;
 
-class RoleController extends Controller
+class LabelController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $roles = Role::all();
+        $labels = Label::latest()->get(); 
         return response()->json([
             'success' => true,
-            'data' => $roles
+            'data' => $labels
         ]);
     }
 
@@ -25,18 +25,16 @@ class RoleController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|unique:roles,name',
-            'permission' => 'required|array',
-            'permission.*' => 'exists:permissions,id',
+            'nom' => 'required|string|max:255',
+            'description' => 'nullable|string',
         ]);
 
-        $role = Role::create(['name' => $request->get('name')]);
-        $role->syncPermissions($request->get('permission'));
+        $label = Label::create($request->all());
 
         return response()->json([
             'success' => true,
-            'message' => 'Role created successfully.',
-            'data' => $role
+            'message' => 'Label created successfully.',
+            'data' => $label
         ], 201);
     }
 
@@ -45,18 +43,18 @@ class RoleController extends Controller
      */
     public function show($id)
     {
-        $role = Role::with('permissions')->find($id);
+        $label = Label::find($id);
 
-        if (!$role) {
+        if (!$label) {
             return response()->json([
                 'success' => false,
-                'message' => 'Role not found.'
+                'message' => 'Label not found.'
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $role
+            'data' => $label
         ]);
     }
 
@@ -65,28 +63,26 @@ class RoleController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $role = Role::find($id);
+        $label = Label::find($id);
 
-        if (!$role) {
+        if (!$label) {
             return response()->json([
                 'success' => false,
-                'message' => 'Role not found.'
+                'message' => 'Label not found.'
             ], 404);
         }
 
         $request->validate([
-            'name' => 'required|unique:roles,name,' . $role->id,
-            'permission' => 'required|array',
-            'permission.*' => 'exists:permissions,id',
+            'nom' => 'required|string|max:255',
+            'description' => 'nullable|string',
         ]);
 
-        $role->update(['name' => $request->get('name')]);
-        $role->syncPermissions($request->get('permission'));
+        $label->update($request->all());
 
         return response()->json([
             'success' => true,
-            'message' => 'Role updated successfully.',
-            'data' => $role
+            'message' => 'Label updated successfully.',
+            'data' => $label
         ]);
     }
 
@@ -95,20 +91,20 @@ class RoleController extends Controller
      */
     public function destroy($id)
     {
-        $role = Role::find($id);
+        $label = Label::find($id);
 
-        if (!$role) {
+        if (!$label) {
             return response()->json([
                 'success' => false,
-                'message' => 'Role not found.'
+                'message' => 'Label not found.'
             ], 404);
         }
 
-        $role->delete();
+        $label->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'Role deleted successfully.'
+            'message' => 'Label deleted successfully.'
         ]);
     }
 }

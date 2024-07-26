@@ -14,8 +14,6 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-
-
     public function __construct()
 {
     $this->middleware('permission:employee-list|employee-create|employee-edit|employee-delete', ['only' => ['index']]);
@@ -24,15 +22,21 @@ class UserController extends Controller
     $this->middleware('permission:employee-delete', ['only' => ['destroy']]);
 }
 
+public function index()
+{
+    $users = User::with('roles')->latest()->get();
 
-    public function index()
-    {
-        $users = User::latest()->paginate(10);
-        return response()->json($users);
-    }
+    $transformedUsers = $users->map(function ($user) {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'roles' => $user->roles->pluck('name')->toArray(),
+        ];
+    });
 
-
-
+    return response()->json($transformedUsers);
+}
     public function store(StoreUserRequest $request): JsonResponse
     {
         $authenticatedUser = Auth::user();
@@ -80,42 +84,51 @@ class UserController extends Controller
         ], 201);
     }
 
-
-
     public function show($id)
     {
         $user = User::findOrFail($id);
         return response()->json($user);
     }
 
-
-
-    // public function edit(User $user): JsonResponse
-    // {
-    //     $roles = Role::pluck('name', 'name')->all();
-    //     $userRoles = $user->roles->pluck('name', 'name')->all();
-    //     return response()->json([
-    //         'user' => $user,
-    //         'roles' => $roles,
-    //         'userRoles' => $userRoles
-    //     ]);
-    // }
     public function update(UpdateUserRequest $request, User $user)
     {
-        // Utiliser les données validées à partir de la demande
-        $validatedData = $request->validated();
+        try {
+            $validatedData = $request->validated();
 
-        // Mettre à jour l'utilisateur avec les données validées
-        $user->update($validatedData);
+            // Update user data
+            $user->name = $validatedData['name'] ?? $user->name;
+            $user->email = $validatedData['email'] ?? $user->email;
 
-        // Retourner l'utilisateur mis à jour
-        return response()->json([
-            'success' => true,
-            'message' => 'Utilisateur mis à jour avec succès.',
-            'user' => $user
-        ]);
+            // Update password if provided
+            if (!empty($validatedData['password'])) {
+                $user->password = Hash::make($validatedData['password']);
+            }
+
+            // Save the user
+            $user->save();
+
+            // Update role if provided
+            if (isset($validatedData['role'])) {
+                $role = Role::where('name', $validatedData['role'])->first();
+                if ($role) {
+                    $user->roles()->sync($role);
+                }
+            }
+
+            return response()->json(['message' => 'User updated successfully']);
+        } catch (\Exception $e) {
+            // Log the detailed error message
+            dd('User Update Error: ', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'validatedData' => $validatedData ?? null,
+                'user' => $user->toArray(),
+            ]);
+
+            // Return a JSON response with the error message
+            return response()->json(['message' => 'An error occurred while updating the user.'], 500);
+        }
     }
-
 
 
     public function destroy(User $user)

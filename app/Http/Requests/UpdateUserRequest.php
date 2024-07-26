@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -26,8 +25,9 @@ class UpdateUserRequest extends FormRequest
         return [
             'name' => 'nullable|string|max:255',
             'email' => 'nullable|string|email|max:255|unique:users,email,' . $userId,
-            'password' => 'nullable|string|min:8|max:20',
-
+            'password' => 'nullable|string|min:8|max:20|confirmed',
+            'role' => 'nullable|string|exists:roles,name',
         ];
     }
+
 }
